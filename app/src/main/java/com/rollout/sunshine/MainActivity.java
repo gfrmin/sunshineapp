@@ -1,19 +1,9 @@
 package com.rollout.sunshine;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 
 public class MainActivity extends Activity {
@@ -24,7 +14,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+                    .add(R.id.container, new ForecastFragment())
                     .commit();
         }
     }
@@ -52,32 +42,5 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
 
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-
-            List<String> weekForecasts = new ArrayList<String>(Arrays.asList("Today-Sunny-88/63", "Tomorrow-Foggy-70/46"));
-
-            ArrayAdapter<String> forecastAdapter = new ArrayAdapter<String>(
-                    getActivity(),
-                    R.layout.list_item_forecast,
-                    R.id.list_item_forecast_textview,
-                    weekForecasts);
-
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-
-            ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
-            listView.setAdapter(forecastAdapter);
-
-            return rootView;
-        }
-    }
 }
