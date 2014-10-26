@@ -5,9 +5,13 @@ package com.rollout.sunshine;
  */
 
 import android.app.Fragment;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -15,6 +19,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -30,14 +35,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 
 /**
  * A forecasting fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment {
+
+    private ArrayAdapter<String> forecastAdapter;
 
     public ForecastFragment() {
     }
@@ -64,9 +69,13 @@ public class ForecastFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
-            FetchWeatherTask weatherTask = new FetchWeatherTask();
-            weatherTask.execute("Hong Kong,hk");
+            updateWeather();
             return true;
+        }
+
+        if (id == R.id.action_settings) {
+            Intent detailIntent = new Intent(getActivity(), SettingsActivity.class);
+            startActivity(detailIntent);
         }
 
         return super.onOptionsItemSelected(item);
@@ -76,22 +85,45 @@ public class ForecastFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        List<String> weekForecasts = new ArrayList<String>(Arrays.asList("Today-Sunny-88/63", "Tomorrow-Foggy-70/46"));
-
-        ArrayAdapter<String> forecastAdapter = new ArrayAdapter<String>(
+        forecastAdapter = new ArrayAdapter<String>(
                 getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecast_textview,
-                weekForecasts);
+                new ArrayList<String>());
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(forecastAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
 
+                Context context = adapterView.getContext();
+                String itemForecast = adapterView.getItemAtPosition(position).toString();
+
+                Intent detailIntent = new Intent(context, DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, itemForecast);
+                startActivity(detailIntent);
+            }
+        });
 
 
         return rootView;
+    }
+
+    private void updateWeather() {
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String currentLocation = preferences.getString("location", getResources().getString(R.string.pref_location_default));
+        String currentTempUnits = preferences.getString("tempunits", getResources().getString(R.string.pref_tempunits_default));
+        weatherTask.execute(currentLocation, currentTempUnits);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -111,12 +143,24 @@ public class ForecastFragment extends Fragment {
          * Prepare the weather high/lows for presentation.
          */
         private String formatHighLows(double high, double low) {
+            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String tempDisplayUnits = sharedPrefs.getString("tempunits", getString(R.string.pref_tempunits_default));
+
+            if (tempDisplayUnits.equals("imperial")) {
+                high = celsiusToFahrenheit(high);
+                low = celsiusToFahrenheit(low);
+            }
+
             // For presentation, assume the user doesn't care about tenths of a degree.
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
 
             String highLowStr = roundedHigh + "/" + roundedLow;
             return highLowStr;
+        }
+
+        private double celsiusToFahrenheit(double celsius) {
+            return (celsius*9/5) + 32;
         }
 
         /**
@@ -168,6 +212,7 @@ public class ForecastFragment extends Fragment {
                 double low = temperatureObject.getDouble(OWM_MIN);
 
                 highAndLow = formatHighLows(high, low);
+
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
@@ -190,7 +235,7 @@ public class ForecastFragment extends Fragment {
             String forecastJsonStr = null;
 
             String format = "json";
-            String units = "metric";
+            String tempunits = "metric";
             int numDays = 7;
 
             try {
@@ -206,7 +251,7 @@ public class ForecastFragment extends Fragment {
                         .appendPath("data/2.5/forecast/daily")
                         .appendQueryParameter("q", place)
                         .appendQueryParameter("mode", format)
-                        .appendQueryParameter("units", units)
+                        .appendQueryParameter("units", tempunits)
                         .appendQueryParameter("cnt", Integer.toString(numDays));
 
                 URL url = new URL(builder.toString());
@@ -276,7 +321,13 @@ public class ForecastFragment extends Fragment {
 
         }
 
-
+        @Override
+        protected void onPostExecute(String[] strings) {
+            if (strings != null) {
+                forecastAdapter.clear();
+                forecastAdapter.addAll(strings);
+            }
+        }
     }
 
 }
