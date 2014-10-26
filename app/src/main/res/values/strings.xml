@@ -11,5 +11,7 @@
     <string name="pref_location_default" translatable="false">Hong Kong,hk</string>
     <string name="pref_tempunits_title">Temperature Units</string>
     <string name="pref_tempunits_default">metric</string>
+    <string name="action_viewonmap">View on map</string>
+    <string name="menu_item_share">Share</string>
 
 </resources>

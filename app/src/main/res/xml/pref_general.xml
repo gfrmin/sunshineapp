@@ -14,5 +14,5 @@
         android:entries="@array/pref_tempunits_entries"
         android:entryValues="@array/pref_tempunits_values"
         android:defaultValue="@string/pref_tempunits_default" />
-    
+
 </PreferenceScreen>

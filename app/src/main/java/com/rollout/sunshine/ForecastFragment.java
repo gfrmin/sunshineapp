@@ -73,6 +73,18 @@ public class ForecastFragment extends Fragment {
             return true;
         }
 
+        if (id == R.id.action_viewonmap) {
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String currentLocation = preferences.getString("location", getResources().getString(R.string.pref_location_default));
+            Uri getLocation = Uri.parse("geo:0,0?").buildUpon().appendQueryParameter("q", currentLocation).build();
+            Intent viewonmapIntent = new Intent(Intent.ACTION_VIEW);
+            viewonmapIntent.setData(getLocation);
+            if (viewonmapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                startActivity(viewonmapIntent);
+            }
+            return true;
+        }
+
         if (id == R.id.action_settings) {
             Intent detailIntent = new Intent(getActivity(), SettingsActivity.class);
             startActivity(detailIntent);
@@ -116,8 +128,7 @@ public class ForecastFragment extends Fragment {
         FetchWeatherTask weatherTask = new FetchWeatherTask();
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String currentLocation = preferences.getString("location", getResources().getString(R.string.pref_location_default));
-        String currentTempUnits = preferences.getString("tempunits", getResources().getString(R.string.pref_tempunits_default));
-        weatherTask.execute(currentLocation, currentTempUnits);
+        weatherTask.execute(currentLocation);
     }
 
     @Override
